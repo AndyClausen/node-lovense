@@ -12,7 +12,9 @@ export interface LovenseToy {
  * Response when sending a command to the Lovense Server
  */
 export interface LovenseResponse {
+  result: boolean;
   code: number;
+  message?: string;
   data?: LovenseResponseData;
   type: string;
 }
@@ -22,19 +24,19 @@ export interface LovenseResponse {
  */
 export interface LovenseResponseData {
   /**
-   * List of Toys that are available to the User or a string
+   * List of Toys that are available to the user as json
    */
-  toys?: string | LovenseToy[];
+  toys: string;
 
   /**
    * Platform the connection is running on
    */
-  platform?: Platform;
+  platform: Platform;
 
   /**
    * The application the connection is running on (Remote or Connect)
    */
-  appType?: AppType;
+  appType: AppType;
 
   mId?: string;
   mToken?: string;
@@ -174,7 +176,7 @@ export interface LovenseQRResponse {
   version: number;
 
   /**
-   * List of Toys that are available to the User
+   * List of toys that are available to the user, indexed by toy ID
    */
-  toys: LovenseToy[];
+  toys: Record<string, LovenseToy>;
 }

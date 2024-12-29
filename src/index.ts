@@ -7,14 +7,9 @@ import {
 } from "./types.js";
 import { ConnectionType, LOVENSE_SERVER_BASE_URL } from "./constants.js";
 
-interface LovenseOptionsLocal {
-  /** The type of connection we are using. (Do not provide if you would like for PC & Mobile to be Tested automatically by default)*/
-  connectionType?: ConnectionType.PC | ConnectionType.MOBILE;
-}
-
-interface LovenseOptionsRemote {
+interface LovenseOptions {
   /** The type of connection we are using.*/
-  connectionType: ConnectionType.SERVER | ConnectionType.QR;
+  connectionType: ConnectionType;
   /** Lovense developer token */
   token: string;
   /** User ID on your application */
@@ -23,8 +18,7 @@ interface LovenseOptionsRemote {
   uname?: string;
 }
 
-type LovenseOptions = LovenseOptionsLocal | LovenseOptionsRemote;
-export class Lovense<T extends LovenseOptions> {
+export class Lovense {
   /** Method in which we are connecting to Lovense Servers */
   connectionType: ConnectionType;
 
@@ -44,7 +38,7 @@ export class Lovense<T extends LovenseOptions> {
   private _uid: string;
   private _uname?: string;
 
-  constructor(options: T) {
+  constructor(options: LovenseOptions) {
     if (options.connectionType === undefined) {
       // TODO
       // Test PC connection
@@ -106,36 +100,42 @@ export class Lovense<T extends LovenseOptions> {
   }
 
   /**
-   * Get's all of the Lovense Toys from Lovense Servers
+   * Get's all of the Lovense Toys from LAN or cache.
+   * This will return the cached data if your connection type is not LAN.
    * @returns {LovenseToy[]} Returns an array of Lovense Toys.
    */
   async fetchToys(): Promise<LovenseToy[]> {
-    return new Promise<LovenseToy[]>(async (resolve, reject) => {
-      var response = await this.executeCommand({
-        command: "GetToys",
-      });
-
-      var toys: LovenseToy[] = [];
-      if (response.data && response.data.toys) {
-        if (typeof response.data.toys === "string") {
-          toys = JSON.parse(response.data.toys);
-        }
-      } else if (response.data && typeof response.data === "object") {
-        toys = <LovenseToy[]>response.data.toys;
-        this._toysCache = toys;
-      } else {
-        reject(
-          new LovenseError({
-            content: response,
-            status: 0,
-            message: "No Toys Found",
-          })
-        );
-      }
-
-      this._toysCache = toys;
-      resolve(toys);
+    if (this.connectionType === ConnectionType.QR) {
+      return this._toysCache;
+    }
+    const response = await this.executeCommand({
+      command: "GetToys",
     });
+
+    let toys: LovenseToy[];
+    if (response.result && response.data) {
+      toys =
+        typeof response.data.toys === "string"
+          ? Object.values(JSON.parse(response.data.toys))
+          : response.data.toys;
+    } else {
+      throw new LovenseError({
+        content: response,
+        status: response.code,
+        message: response.message,
+      });
+    }
+
+    this._toysCache = toys;
+    return toys;
+  }
+
+  /**
+   * This should only be used with a remote connection.
+   * @param toys
+   */
+  setToys(toys: LovenseToy[]): void {
+    this._toysCache = toys;
   }
 
   /**
@@ -169,7 +169,7 @@ export class Lovense<T extends LovenseOptions> {
     }
 
     return await this.executeCommand({
-      command: "Vibrate",
+      command: "Function",
       toy: typeof toy === "string" ? toy : toy.id,
       action: "Vibrate:" + strength,
       timeSec: duration,
@@ -181,7 +181,7 @@ export class Lovense<T extends LovenseOptions> {
     this.localConnectPort = response.httpsPort;
 
     if (response.toys) {
-      this._toysCache = response.toys;
+      this._toysCache = Object.values(response.toys);
     }
   }
 
@@ -194,12 +194,20 @@ export class Lovense<T extends LovenseOptions> {
     switch (this.connectionType) {
       case ConnectionType.PC:
       case ConnectionType.MOBILE:
+        throw new Error("Not Implemented");
+      case ConnectionType.QR:
+      case ConnectionType.SERVER:
         let res: Response;
         try {
-          res = await fetch(this._generateLovenseUrl(), {
+          res = await fetch(this._generateCommandUrl(), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(command),
+            body: JSON.stringify({
+              ...command,
+              token: this._token,
+              uid: this._uid,
+              apiVer: 1,
+            }),
           });
         } catch (error: unknown) {
           // if (err.errno === "400") {}
@@ -210,26 +218,22 @@ export class Lovense<T extends LovenseOptions> {
             message: "Error while connecting to Lovense Server",
           });
         }
-        const json = await res.json();
-        if (res.status !== 200) {
+        const json: LovenseResponse = await res.json();
+        if (!json.result) {
           throw new LovenseError({
             content: json,
             status: res.status,
+            message: json.message,
           });
         }
         return json;
-
-      case ConnectionType.QR:
-      case ConnectionType.SERVER:
-      default:
-        throw new Error("Not Implemented");
     }
   }
 
   /**
-   * Generate the Correct URL Scheme for Local VS QR
+   * Generate the correct URL Scheme for sending commands to the Lovense Server or local API
    */
-  private _generateLovenseUrl(): URL {
+  private _generateCommandUrl(): URL {
     let baseUrl: URL;
     switch (this.connectionType) {
       case ConnectionType.PC:
@@ -244,9 +248,9 @@ export class Lovense<T extends LovenseOptions> {
         break;
       case ConnectionType.QR:
       case ConnectionType.SERVER:
-        baseUrl = new URL("/v2", LOVENSE_SERVER_BASE_URL);
+        baseUrl = new URL("v2/", LOVENSE_SERVER_BASE_URL);
     }
-    return new URL("command", baseUrl);
+    return new URL("command/", baseUrl);
   }
 
   /**
