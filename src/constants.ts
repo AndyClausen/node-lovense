@@ -40,3 +40,6 @@ export const ToySupportedFunctions = {
   nora: Feature.Vibrate,
   exomoon: Feature.Vibrate,
 } as const;
+
+export const LOVENSE_SERVER_BASE_URL =
+  "https://api.lovense-api.com/api/lan/" as const;

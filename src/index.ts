@@ -5,9 +5,26 @@ import {
   CommandOptions,
   LovenseToy,
 } from "./types.js";
-import { ConnectionType } from "./constants.js";
+import { ConnectionType, LOVENSE_SERVER_BASE_URL } from "./constants.js";
 
-export class Lovense {
+interface LovenseOptionsLocal {
+  /** The type of connection we are using. (Do not provide if you would like for PC & Mobile to be Tested automatically by default)*/
+  connectionType?: ConnectionType.PC | ConnectionType.MOBILE;
+}
+
+interface LovenseOptionsRemote {
+  /** The type of connection we are using.*/
+  connectionType: ConnectionType.SERVER | ConnectionType.QR;
+  /** Lovense developer token */
+  token: string;
+  /** User ID on your application */
+  uid: string;
+  /** Username on your application */
+  uname?: string;
+}
+
+type LovenseOptions = LovenseOptionsLocal | LovenseOptionsRemote;
+export class Lovense<T extends LovenseOptions> {
   /** Method in which we are connecting to Lovense Servers */
   connectionType: ConnectionType;
 
@@ -21,31 +38,73 @@ export class Lovense {
   platform: string = "";
 
   /** Cache of the Lovense Toys. Information in here may not be correct and shouldn't be used. */
-  _toysCache: LovenseToy[] = [];
+  private _toysCache: LovenseToy[] = [];
 
-  /**
-   * Get the Connection Type
-   * @param connectionType The type of connection we are using. (Do not provide if you would like for PC & Mobile to be Tested automatically by default)
-   */
-  constructor(connectionType?: ConnectionType) {
-    if (connectionType === undefined) {
+  private _token: string;
+  private _uid: string;
+  private _uname?: string;
+
+  constructor(options: T) {
+    if (options.connectionType === undefined) {
       // TODO
       // Test PC connection
       // Test Mobile Connection
       // Error
       throw new Error("Not Implemented");
     } else {
-      this.connectionType = connectionType;
+      this.connectionType = options.connectionType;
     }
-    switch (connectionType) {
+    switch (options.connectionType) {
       case ConnectionType.PC:
-        // Test PC connection
-        break;
+      // Test PC connection
       case ConnectionType.MOBILE:
-        // Test Mobile Connection
-        break;
+      // Test Mobile Connection
+      case ConnectionType.SERVER:
+        throw new Error("Not Implemented");
+      case ConnectionType.QR:
+        this._token = options.token;
+        this._uid = options.uid;
+        this._uname = options.uname;
     }
   }
+
+  /**
+   * Get the QR Code for the Lovense Server
+   * You need to provide a callback URL on the developer dashboard to be used for the QR Code
+   * @returns {Promise<{code: number, message: string, result: true, data: {qr: string, code: string}}>}
+   */
+  async getQRCode(): Promise<{
+    code: number;
+    message: string;
+    result: true;
+    data: { qr: string; code: string };
+  }> {
+    const response = await fetch(
+      new URL("getQrCode", LOVENSE_SERVER_BASE_URL),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: this._token,
+          uid: this._uid,
+          uname: this._uname,
+          v: 2,
+        }),
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new LovenseError({
+        content: data,
+        status: data.code,
+        message: data.message,
+      });
+    }
+
+    return data;
+  }
+
   /**
    * Get's all of the Lovense Toys from Lovense Servers
    * @returns {LovenseToy[]} Returns an array of Lovense Toys.
@@ -162,25 +221,32 @@ export class Lovense {
 
       case ConnectionType.QR:
       case ConnectionType.SERVER:
+      default:
         throw new Error("Not Implemented");
     }
   }
 
-  private _testConnection() {}
-
   /**
    * Generate the Correct URL Scheme for Local VS QR
    */
-  private _generateLovenseUrl(): string {
+  private _generateLovenseUrl(): URL {
+    let baseUrl: URL;
     switch (this.connectionType) {
       case ConnectionType.PC:
-        return `https://127-0-0-1.lovense.club:${this.localConnectPort}/command`;
+        baseUrl = new URL(
+          `https://127-0-0-1.lovense.club:${this.localConnectPort}`
+        );
+        break;
       case ConnectionType.MOBILE:
-        return `https://${this.localDomain}.lovense.club:${this.localConnectPort}/command`;
+        baseUrl = new URL(
+          `https://${this.localDomain}.lovense.club:${this.localConnectPort}`
+        );
+        break;
       case ConnectionType.QR:
       case ConnectionType.SERVER:
-        throw new Error("Not Implemented");
+        baseUrl = new URL("/v2", LOVENSE_SERVER_BASE_URL);
     }
+    return new URL("command", baseUrl);
   }
 
   /**

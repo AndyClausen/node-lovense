@@ -4,6 +4,9 @@
   "description": "Connect and Access Lovense toys through NodeJS!",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
   "files": [
     "/dist"
   ],
@@ -13,5 +16,5 @@
     "prettier": "^3.4.2",
     "typescript": "^5.7.2"
   },
-  "packageManager": ">=bun@1.0.0"
+  "packageManager": ">=bun@1.1.0"
 }
