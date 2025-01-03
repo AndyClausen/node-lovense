@@ -12,11 +12,11 @@ export interface LovenseToy {
  * Response when sending a command to the Lovense Server
  */
 export interface LovenseResponse {
-  result: boolean;
+  result?: boolean;
   code: number;
   message?: string;
   data?: LovenseResponseData;
-  type: string;
+  type?: string;
 }
 
 /**

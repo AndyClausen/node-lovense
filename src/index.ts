@@ -15,9 +15,9 @@ interface LovenseOptions {
   /** The type of connection we are using.*/
   connectionType: ConnectionType;
   /** Lovense developer token */
-  token: string;
+  token?: string;
   /** User ID on your application */
-  uid: string;
+  uid?: string;
   /** Username on your application */
   uname?: string;
 }
@@ -38,27 +38,16 @@ export class Lovense {
   /** Cache of the Lovense Toys. Information in here may not be correct and shouldn't be used. */
   private _toysCache: LovenseToy[] = [];
 
-  private _token: string;
-  private _uid: string;
+  private _token?: string;
+  private _uid?: string;
   private _uname?: string;
 
   constructor(options: LovenseOptions) {
-    if (options.connectionType === undefined) {
-      // TODO
-      // Test PC connection
-      // Test Mobile Connection
-      // Error
-      throw new Error("Not Implemented");
-    } else {
-      this.connectionType = options.connectionType;
-    }
-    switch (options.connectionType) {
-      case ConnectionType.LOCAL:
-        throw new Error("Not Implemented");
-      case ConnectionType.SERVER:
-        this._token = options.token;
-        this._uid = options.uid;
-        this._uname = options.uname;
+    this.connectionType = options.connectionType;
+    if (options.connectionType === ConnectionType.SERVER) {
+      this._token = options.token;
+      this._uid = options.uid;
+      this._uname = options.uname;
     }
   }
 
@@ -108,12 +97,12 @@ export class Lovense {
     if (this.connectionType === ConnectionType.SERVER) {
       return this._toysCache;
     }
-    const response = await this.executeCommand({
+    const response = await this._executeCommand({
       command: "GetToys",
     });
 
     let toys: LovenseToy[];
-    if (response.result && response.data) {
+    if ((response.result ?? response.type === "OK") && response.data) {
       toys =
         typeof response.data.toys === "string"
           ? Object.values(JSON.parse(response.data.toys))
@@ -168,7 +157,7 @@ export class Lovense {
       strength = 0;
     }
 
-    return await this.executeCommand({
+    return await this._executeCommand({
       command: "Function",
       toy: typeof toy === "string" ? toy : toy.id,
       action: "Vibrate:" + strength,
@@ -191,41 +180,48 @@ export class Lovense {
    * @param command The command to be sent to the Lovense Toy.
    * @returns
    */
-  async executeCommand(command: CommandOptions): Promise<LovenseResponse> {
+  private async _executeCommand(
+    command: CommandOptions
+  ): Promise<LovenseResponse> {
+    let body: string;
+
     switch (this.connectionType) {
       case ConnectionType.LOCAL:
-        throw new Error("Not Implemented");
+        body = JSON.stringify({
+          ...command,
+        });
       case ConnectionType.SERVER:
-        let res: Response;
-        try {
-          res = await fetch(this._generateCommandUrl(), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...command,
-              token: this._token,
-              uid: this._uid,
-            }),
-          });
-        } catch (error: unknown) {
-          // if (err.errno === "400") {}
-          // Convert to LovenseError
-          throw new LovenseError({
-            content: error,
-            status: 0,
-            message: "Error while connecting to Lovense Server",
-          });
-        }
-        const json: LovenseResponse = await res.json();
-        if (!json.result) {
-          throw new LovenseError({
-            content: json,
-            status: res.status,
-            message: json.message,
-          });
-        }
-        return json;
+        body = JSON.stringify({
+          ...command,
+          token: this._token,
+          uid: this._uid,
+        });
     }
+    let res: Response;
+    console.log(this._generateCommandUrl());
+    try {
+      res = await fetch(this._generateCommandUrl(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+      });
+    } catch (error: unknown) {
+      // Convert to LovenseError
+      throw new LovenseError({
+        content: error,
+        status: 0,
+        message: "Error while connecting to Lovense Server",
+      });
+    }
+    const json: LovenseResponse = await res.json();
+    if (json.result === false || (json.type && json.type !== "OK")) {
+      throw new LovenseError({
+        content: json,
+        status: res.status,
+        message: json.message,
+      });
+    }
+    return json;
   }
 
   /**
@@ -242,7 +238,7 @@ export class Lovense {
           break;
         }
         baseUrl = new URL(
-          `https://${this.localDomain}.lovense.club:${this.localConnectPort}`
+          `https://${this.localDomain}:${this.localConnectPort}`
         );
         break;
       case ConnectionType.SERVER:
