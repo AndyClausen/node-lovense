@@ -1,15 +1,14 @@
 import { AppType, Feature, Platform } from "./constants.js";
 
-export interface VibrateParams {
+export interface BaseFunctionParams {
   strength: number;
   toy?: string | LovenseToy;
   duration?: number;
 }
 
-export interface ThrustingParams {
-  speed: number;
-  toy?: string | LovenseToy;
-  duration?: number;
+export interface FunctionParams extends BaseFunctionParams {
+  action: string;
+  maxStrength: number;
 }
 
 export interface LovenseToy {

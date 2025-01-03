@@ -4,8 +4,8 @@ import {
   LovenseQRResponse,
   CommandOptions,
   LovenseToy,
-  VibrateParams,
-  ThrustingParams,
+  FunctionParams,
+  BaseFunctionParams,
 } from "./types.js";
 import {
   ConnectionType,
@@ -145,48 +145,35 @@ export class Lovense {
     return this._toysCache.filter((toy) => toy.status);
   }
 
-  async vibrate({
-    strength,
-    toy,
-    duration,
-  }: VibrateParams): Promise<LovenseResponse> {
-    duration = duration ?? 0;
-
-    if (strength > 20) {
-      strength = 20;
-    }
-    if (strength < 0) {
-      strength = 0;
-    }
-
-    return await this._executeCommand({
-      command: "Function",
-      toy: (typeof toy === "string" ? toy : toy?.id) ?? undefined,
-      action: "Vibrate:" + strength,
-      timeSec: duration,
-      apiVer: 1,
+  async vibrate(params: BaseFunctionParams): Promise<LovenseResponse> {
+    return await this._executeFunction({
+      ...params,
+      action: "Vibrate",
+      maxStrength: 20,
     });
   }
 
-  async thrusting({
-    speed,
+  async thrusting(params: BaseFunctionParams): Promise<LovenseResponse> {
+    return await this._executeFunction({
+      ...params,
+      action: "Thrusting",
+      maxStrength: 20,
+    });
+  }
+
+  private async _executeFunction({
+    action,
+    maxStrength,
     toy,
+    strength,
     duration,
-  }: ThrustingParams): Promise<LovenseResponse> {
-    duration = duration ?? 0;
-
-    if (speed > 20) {
-      speed = 20;
-    }
-    if (speed < 0) {
-      speed = 0;
-    }
-
+  }: FunctionParams): Promise<LovenseResponse> {
+    strength = Math.min(Math.max(strength, 0), maxStrength);
     return await this._executeCommand({
       command: "Function",
       toy: (typeof toy === "string" ? toy : toy?.id) ?? undefined,
-      action: "Thrusting:" + speed,
-      timeSec: duration,
+      action: `${action}:${strength}`,
+      timeSec: duration ? Math.max(duration, 1) : 0,
       apiVer: 1,
     });
   }
