@@ -14,29 +14,35 @@ export enum AppType {
   Remote = "remote",
 }
 
-export enum Feature {
-  Vibrate,
-  Rotate,
-  Pump,
+export enum ActionType {
+  Vibrate = "Vibrate",
+  Rotate = "Rotate",
+  Pump = "Pump",
+  Thrusting = "Thrusting",
+  Fingering = "Fingering",
+  Suction = "Suction",
+  Depth = "Depth",
+  All = "All",
+  Stop = "Stop",
 }
 
 export const ToySupportedFunctions = {
-  calor: Feature.Vibrate,
-  gush: Feature.Vibrate,
-  hyphy: Feature.Vibrate,
-  dolce: Feature.Vibrate,
-  ambi: Feature.Vibrate,
-  max: Feature.Vibrate,
-  mission: Feature.Vibrate,
-  edge: Feature.Vibrate,
-  hush: Feature.Vibrate,
-  lush: Feature.Vibrate,
-  domi: Feature.Vibrate,
-  diamo: Feature.Vibrate,
-  osci: Feature.Vibrate,
-  ferri: Feature.Vibrate,
-  nora: Feature.Vibrate,
-  exomoon: Feature.Vibrate,
+  calor: ActionType.Vibrate,
+  gush: ActionType.Vibrate,
+  hyphy: ActionType.Vibrate,
+  dolce: ActionType.Vibrate,
+  ambi: ActionType.Vibrate,
+  max: ActionType.Vibrate,
+  mission: ActionType.Vibrate,
+  edge: ActionType.Vibrate,
+  hush: ActionType.Vibrate,
+  lush: ActionType.Vibrate,
+  domi: ActionType.Vibrate,
+  diamo: ActionType.Vibrate,
+  osci: ActionType.Vibrate,
+  ferri: ActionType.Vibrate,
+  nora: ActionType.Vibrate,
+  exomoon: ActionType.Vibrate,
 } as const;
 
 export const LOVENSE_SERVER_BASE_URL =

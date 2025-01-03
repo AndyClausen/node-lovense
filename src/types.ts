@@ -1,14 +1,13 @@
-import { AppType, Feature, Platform } from "./constants.js";
+import { AppType, ActionType, Platform } from "./constants.js";
 
-export interface BaseFunctionParams {
-  strength: number;
-  toy?: string | LovenseToy;
-  duration?: number;
+export interface Action {
+  action: ActionType;
+  strength?: number;
 }
 
-export interface FunctionParams extends BaseFunctionParams {
-  action: string;
-  maxStrength: number;
+export interface ExecuteActionOptions {
+  toy?: string | LovenseToy;
+  duration?: number;
 }
 
 export interface LovenseToy {
@@ -16,7 +15,7 @@ export interface LovenseToy {
   name: string;
   id: string;
   status: number;
-  features: Feature;
+  features: ActionType;
 }
 
 /**

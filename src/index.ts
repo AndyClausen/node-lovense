@@ -4,10 +4,11 @@ import {
   LovenseQRResponse,
   CommandOptions,
   LovenseToy,
-  FunctionParams,
-  BaseFunctionParams,
+  ExecuteActionOptions,
+  Action,
 } from "./types.js";
 import {
+  ActionType,
   ConnectionType,
   LOVENSE_SERVER_BASE_URL,
   Platform,
@@ -145,34 +146,59 @@ export class Lovense {
     return this._toysCache.filter((toy) => toy.status);
   }
 
-  async vibrate(params: BaseFunctionParams): Promise<LovenseResponse> {
-    return await this._executeFunction({
-      ...params,
-      action: "Vibrate",
-      maxStrength: 20,
-    });
+  async stopActions(
+    options: Pick<ExecuteActionOptions, "toy">
+  ): Promise<LovenseResponse> {
+    return await this.executeActions(
+      {
+        ...options,
+      },
+      { action: ActionType.Stop }
+    );
   }
 
-  async thrusting(params: BaseFunctionParams): Promise<LovenseResponse> {
-    return await this._executeFunction({
-      ...params,
-      action: "Thrusting",
-      maxStrength: 20,
-    });
+  private _maxStrength(action: ActionType): number {
+    switch (action) {
+      case ActionType.Vibrate:
+      case ActionType.Rotate:
+      case ActionType.Thrusting:
+      case ActionType.Fingering:
+      case ActionType.Suction:
+      case ActionType.All:
+        return 20;
+      case ActionType.Pump:
+      case ActionType.Depth:
+        return 3;
+      default:
+        throw new Error(`Action ${action} has no max strength`);
+    }
   }
 
-  private async _executeFunction({
-    action,
-    maxStrength,
-    toy,
-    strength,
-    duration,
-  }: FunctionParams): Promise<LovenseResponse> {
-    strength = Math.min(Math.max(strength, 0), maxStrength);
+  private _buildActionString(...actions: Action[]): string {
+    return actions
+      .map((action) => {
+        action.strength =
+          action.action === ActionType.Stop
+            ? undefined
+            : Math.min(
+                Math.max(action.strength ?? 0, 0),
+                this._maxStrength(action.action)
+              );
+        return action.action === ActionType.Stop
+          ? action.action
+          : `${action.action}:${action.strength}`;
+      })
+      .join(",");
+  }
+
+  async executeActions(
+    { toy, duration }: ExecuteActionOptions,
+    ...actions: Action[]
+  ): Promise<LovenseResponse> {
     return await this._executeCommand({
       command: "Function",
       toy: (typeof toy === "string" ? toy : toy?.id) ?? undefined,
-      action: `${action}:${strength}`,
+      action: this._buildActionString(...actions),
       timeSec: duration ? Math.max(duration, 1) : 0,
       apiVer: 1,
     });
