@@ -6,6 +6,12 @@ export interface VibrateParams {
   duration?: number;
 }
 
+export interface ThrustingParams {
+  speed: number;
+  toy?: string | LovenseToy;
+  duration?: number;
+}
+
 export interface LovenseToy {
   nickname: string;
   name: string;

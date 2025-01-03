@@ -5,6 +5,7 @@ import {
   CommandOptions,
   LovenseToy,
   VibrateParams,
+  ThrustingParams,
 } from "./types.js";
 import {
   ConnectionType,
@@ -162,6 +163,29 @@ export class Lovense {
       command: "Function",
       toy: (typeof toy === "string" ? toy : toy?.id) ?? undefined,
       action: "Vibrate:" + strength,
+      timeSec: duration,
+      apiVer: 1,
+    });
+  }
+
+  async thrusting({
+    speed,
+    toy,
+    duration,
+  }: ThrustingParams): Promise<LovenseResponse> {
+    duration = duration ?? 0;
+
+    if (speed > 20) {
+      speed = 20;
+    }
+    if (speed < 0) {
+      speed = 0;
+    }
+
+    return await this._executeCommand({
+      command: "Function",
+      toy: (typeof toy === "string" ? toy : toy?.id) ?? undefined,
+      action: "Thrusting:" + speed,
       timeSec: duration,
       apiVer: 1,
     });
