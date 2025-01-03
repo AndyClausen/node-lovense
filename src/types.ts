@@ -1,5 +1,11 @@
 import { AppType, Feature, Platform } from "./constants.js";
 
+export interface VibrateParams {
+  strength: number;
+  toy?: string | LovenseToy;
+  duration?: number;
+}
+
 export interface LovenseToy {
   nickname: string;
   name: string;

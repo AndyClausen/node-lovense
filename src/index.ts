@@ -4,6 +4,7 @@ import {
   LovenseQRResponse,
   CommandOptions,
   LovenseToy,
+  VibrateParams,
 } from "./types.js";
 import {
   ConnectionType,
@@ -143,12 +144,12 @@ export class Lovense {
     return this._toysCache.filter((toy) => toy.status);
   }
 
-  async vibrate(
-    toy: string | LovenseToy,
-    strength: number,
-    duration?: number
-  ): Promise<LovenseResponse> {
-    duration = duration || 0;
+  async vibrate({
+    strength,
+    toy,
+    duration,
+  }: VibrateParams): Promise<LovenseResponse> {
+    duration = duration ?? 0;
 
     if (strength > 20) {
       strength = 20;
@@ -159,7 +160,7 @@ export class Lovense {
 
     return await this._executeCommand({
       command: "Function",
-      toy: typeof toy === "string" ? toy : toy.id,
+      toy: (typeof toy === "string" ? toy : toy?.id) ?? undefined,
       action: "Vibrate:" + strength,
       timeSec: duration,
       apiVer: 1,
