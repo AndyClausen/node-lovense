@@ -5,7 +5,11 @@ import {
   CommandOptions,
   LovenseToy,
 } from "./types.js";
-import { ConnectionType, LOVENSE_SERVER_BASE_URL } from "./constants.js";
+import {
+  ConnectionType,
+  LOVENSE_SERVER_BASE_URL,
+  Platform,
+} from "./constants.js";
 
 interface LovenseOptions {
   /** The type of connection we are using.*/
@@ -49,13 +53,9 @@ export class Lovense {
       this.connectionType = options.connectionType;
     }
     switch (options.connectionType) {
-      case ConnectionType.PC:
-      // Test PC connection
-      case ConnectionType.MOBILE:
-      // Test Mobile Connection
-      case ConnectionType.SERVER:
+      case ConnectionType.LOCAL:
         throw new Error("Not Implemented");
-      case ConnectionType.QR:
+      case ConnectionType.SERVER:
         this._token = options.token;
         this._uid = options.uid;
         this._uname = options.uname;
@@ -105,7 +105,7 @@ export class Lovense {
    * @returns {LovenseToy[]} Returns an array of Lovense Toys.
    */
   async fetchToys(): Promise<LovenseToy[]> {
-    if (this.connectionType === ConnectionType.QR) {
+    if (this.connectionType === ConnectionType.SERVER) {
       return this._toysCache;
     }
     const response = await this.executeCommand({
@@ -173,6 +173,7 @@ export class Lovense {
       toy: typeof toy === "string" ? toy : toy.id,
       action: "Vibrate:" + strength,
       timeSec: duration,
+      apiVer: 1,
     });
   }
 
@@ -192,10 +193,8 @@ export class Lovense {
    */
   async executeCommand(command: CommandOptions): Promise<LovenseResponse> {
     switch (this.connectionType) {
-      case ConnectionType.PC:
-      case ConnectionType.MOBILE:
+      case ConnectionType.LOCAL:
         throw new Error("Not Implemented");
-      case ConnectionType.QR:
       case ConnectionType.SERVER:
         let res: Response;
         try {
@@ -206,7 +205,6 @@ export class Lovense {
               ...command,
               token: this._token,
               uid: this._uid,
-              apiVer: 1,
             }),
           });
         } catch (error: unknown) {
@@ -236,17 +234,17 @@ export class Lovense {
   private _generateCommandUrl(): URL {
     let baseUrl: URL;
     switch (this.connectionType) {
-      case ConnectionType.PC:
-        baseUrl = new URL(
-          `https://127-0-0-1.lovense.club:${this.localConnectPort}`
-        );
-        break;
-      case ConnectionType.MOBILE:
+      case ConnectionType.LOCAL:
+        if (this.platform === Platform.PC) {
+          baseUrl = new URL(
+            `https://127-0-0-1.lovense.club:${this.localConnectPort}`
+          );
+          break;
+        }
         baseUrl = new URL(
           `https://${this.localDomain}.lovense.club:${this.localConnectPort}`
         );
         break;
-      case ConnectionType.QR:
       case ConnectionType.SERVER:
         baseUrl = new URL("v2/", LOVENSE_SERVER_BASE_URL);
     }

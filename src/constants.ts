@@ -1,7 +1,5 @@
 export enum ConnectionType {
-  PC,
-  MOBILE,
-  QR,
+  LOCAL,
   SERVER,
 }
 
