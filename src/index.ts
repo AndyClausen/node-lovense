@@ -236,7 +236,6 @@ export class Lovense {
         });
     }
     let res: Response;
-    console.log(this._generateCommandUrl());
     try {
       res = await fetch(this._generateCommandUrl(), {
         method: "POST",
@@ -285,3 +284,7 @@ export class Lovense {
     return new URL("command/", baseUrl);
   }
 }
+
+export * from "./types.js";
+export * from "./constants.js";
+export * from "./lovense-error.js";

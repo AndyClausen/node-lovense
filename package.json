@@ -1,9 +1,11 @@
 {
   "name": "node-lovense",
-  "version": "1.0.0",
-  "description": "Connect and Access Lovense toys through NodeJS!",
+  "version": "0.1.0",
+  "description": "Connect and access Lovense toys through NodeJS!",
+  "repository": "https://github.com/AndyClausen/node-lovense",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
   "scripts": {
     "build": "tsc"
   },
@@ -12,7 +14,7 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/node": "^22.10.5",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2"
   },
