@@ -284,19 +284,4 @@ export class Lovense {
     }
     return new URL("command/", baseUrl);
   }
-
-  /**
-   * Convert the Object into URL encoded Parameters
-   * @param params Object of parameters to be sent to the Server
-   * @returns {string} string of URL encoded parameters
-   */
-  private _formatParams(params: CommandOptions): string {
-    var retArr: string[] = [];
-    for (const entry in Object.entries(params)) {
-      retArr.push(
-        encodeURIComponent(entry[0]) + "=" + encodeURIComponent(entry[1])
-      );
-    }
-    return retArr.join("&");
-  }
 }
