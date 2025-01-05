@@ -2,7 +2,10 @@
   "name": "node-lovense",
   "version": "0.1.0",
   "description": "Connect and access Lovense toys through NodeJS!",
-  "repository": "https://github.com/AndyClausen/node-lovense",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndyClausen/node-lovense.git"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",

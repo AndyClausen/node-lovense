@@ -18,11 +18,11 @@ npm install node-lovense
 
 Create a Lovense instance:
 
-```js
+```ts
 import { Lovense, ConnectionType } from "node-lovense";
 
 const lovense = new Lovense({
-  connectionType: ConnectionType.REMOTE,
+  connectionType: ConnectionType.SERVER,
   token: process.env.LOVENSE_TOKEN, // Lovense developer token
   uid: process.env.LOVENSE_UID, // User ID on your application
 });
@@ -32,19 +32,19 @@ await lovense.getQRCode();
 
 After receiving a callback from scanning the QR Code, you can set the data on the Lovense instance:
 
-```js
+```ts
 lovense.setConnectCallbackData(qrData);
 ```
 
 You should then be able to get a list of toys with this:
 
-```js
+```ts
 lovense.getToys();
 ```
 
 Executing actions is done by passing in an options object, and actions for the rest of the parameters:
 
-```js
+```ts
 // one action on all toys
 lovense.executeActions(
   { duration: 5 },
